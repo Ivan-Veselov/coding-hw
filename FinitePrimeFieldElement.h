@@ -9,11 +9,27 @@ template <Natural P>
 class FinitePrimeFieldElement;
 
 template <Natural P>
+using GF = FinitePrimeFieldElement<P>;
+
+template <Natural P>
+bool operator == (const FinitePrimeFieldElement<P>&, const FinitePrimeFieldElement<P>&);
+
+template <Natural P>
+bool operator != (const FinitePrimeFieldElement<P>&, const FinitePrimeFieldElement<P>&);
+
+template <Natural P>
 class FinitePrimeFieldElement {
+    friend bool operator == <>(const FinitePrimeFieldElement<P>&, const FinitePrimeFieldElement<P>&);
+    friend bool operator != <>(const FinitePrimeFieldElement<P>&, const FinitePrimeFieldElement<P>&);
+
     private:
         static bool isChecked;
 
         Whole remainder;
+
+    public:
+        static const FinitePrimeFieldElement ZERO;
+        static const FinitePrimeFieldElement ONE;
 
     public:
         FinitePrimeFieldElement()
@@ -67,6 +83,14 @@ class FinitePrimeFieldElement {
             return std::to_string(remainder) + " (mod " + std::to_string(P) + ")";
         }
 
+        std::string formulaString() const {
+            return std::to_string(remainder);
+        }
+
+        static std::string setPrettyString() {
+            return "GF(" + std::to_string(P) + ")";
+        }
+
     private:
         static void check() {
             assert(isPrime(P));
@@ -86,6 +110,12 @@ template <Natural P>
 bool FinitePrimeFieldElement<P>::isChecked = false;
 
 template <Natural P>
+const FinitePrimeFieldElement<P> FinitePrimeFieldElement<P>::ZERO = 0;
+
+template <Natural P>
+const FinitePrimeFieldElement<P> FinitePrimeFieldElement<P>::ONE  = 1;
+
+template <Natural P>
 FinitePrimeFieldElement<P> operator + (FinitePrimeFieldElement<P> element1, const FinitePrimeFieldElement<P> &element2) {
     return element1 += element2;
 }
@@ -103,4 +133,14 @@ FinitePrimeFieldElement<P> operator * (FinitePrimeFieldElement<P> element1, cons
 template <Natural P>
 FinitePrimeFieldElement<P> operator / (FinitePrimeFieldElement<P> element1, const FinitePrimeFieldElement<P> &element2) {
     return element1 /= element2;
+}
+
+template <Natural P>
+bool operator == (const FinitePrimeFieldElement<P> &element1, const FinitePrimeFieldElement<P> &element2) {
+    return element1.remainder == element2.remainder;
+}
+
+template <Natural P>
+bool operator != (const FinitePrimeFieldElement<P> &element1, const FinitePrimeFieldElement<P> &element2) {
+    return element1.remainder != element2.remainder;
 }
