@@ -4,23 +4,30 @@
 #include "Polynomial.h"
 
 int main() {
-    /*GF<7> a, b;
+    auto polynomials = Polynomial<GF<3>>::allPolynomials(2);
 
-    a = 3;
-    b = 6;
+    for (const auto &polynomial : polynomials) {
+        if (polynomial == Polynomial<GF<3>>::ZERO || polynomial[polynomial.deg()] != GF<3>::ONE) {
+            continue;
+        }
 
-    auto c = a.inv();
+        bool isDivisible = false;
+        for (const auto &other : polynomials) {
+            if (other.deg() < 1 || other.deg() >= polynomial.deg()) {
+                continue;
+            }
 
-    std::cout << c.prettyString() << std::endl;*/
+            if (polynomial % other == Polynomial<GF<3>>::ZERO) {
+                std::cout << polynomial.formulaString() << " = (" << other.formulaString() << ") * (" << (polynomial / other).formulaString() << ")" << std::endl;
+                isDivisible = true;
+                break;
+            }
+        }
 
-    auto x = Polynomial<GF<7>>::X;
-
-    auto pol1 = x(4) + 2 * x(2) + 5 * x(1) + 2;
-    auto pol2 = x(1) * 3 - 3 * x(2);
-
-    auto pol3 = pol1 + pol2;
-
-    std::cout << (pol3).prettyString() << std::endl;
+        if (!isDivisible) {
+            std::cout << polynomial.formulaString() << " is a prime polynomial" << std::endl;
+        }
+    }
 
     return 0;
 }

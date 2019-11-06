@@ -2,6 +2,7 @@
 
 #include <string>
 #include <cassert>
+#include <vector>
 
 #include "numbers.h"
 
@@ -46,7 +47,17 @@ class FinitePrimeFieldElement {
             }
         }
 
-        FinitePrimeFieldElement inv() {
+        static std::vector<FinitePrimeFieldElement> allElements() {
+            std::vector<FinitePrimeFieldElement> elements;
+            for (Whole remainder = 0; remainder < P; ++remainder) {
+                elements.push_back(FinitePrimeFieldElement(remainder));
+            }
+
+            return elements;
+        }
+
+        FinitePrimeFieldElement inv() const {
+            assert(remainder != 0);
             return fastPower(*this, P - 2);
         }
 

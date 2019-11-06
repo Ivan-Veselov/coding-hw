@@ -5,7 +5,19 @@
 #include "numbers.h"
 
 template <typename Coefficient>
+class Polynomial;
+
+template <typename Coefficient>
+bool operator == (const Polynomial<Coefficient>&, const Polynomial<Coefficient>&);
+
+template <typename Coefficient>
+bool operator != (const Polynomial<Coefficient>&, const Polynomial<Coefficient>&);
+
+template <typename Coefficient>
 class Polynomial {
+    friend bool operator == <>(const Polynomial<Coefficient>&, const Polynomial<Coefficient>&);
+    friend bool operator != <>(const Polynomial<Coefficient>&, const Polynomial<Coefficient>&);
+
     private:
         std::vector<Coefficient> coefficients;
         // coefficients[i] is a coefficient for x^i
@@ -21,6 +33,10 @@ class Polynomial {
         static const Variable X;
 
     public:
+        static const Polynomial ZERO;
+        static const Polynomial ONE;
+
+    public:
         Polynomial()
         : coefficients({Coefficient::ZERO}) {
         }
@@ -34,12 +50,50 @@ class Polynomial {
             coefficients[power] = Coefficient::ONE;
         }
 
+        static std::vector<Polynomial> allPolynomials(Natural maxDeg) {
+            auto allCoefficients = Coefficient::allElements();
+
+            std::vector<Polynomial> polynomials;
+
+            if (maxDeg == 0) {
+                for (const auto &coefficient : allCoefficients) {
+                    polynomials.push_back(Polynomial(coefficient));
+                }
+
+                return polynomials;
+            }
+
+            std::vector<Polynomial> lowerDegreePolynomials = allPolynomials(maxDeg - 1);
+            polynomials.insert(polynomials.end(), lowerDegreePolynomials.begin(), lowerDegreePolynomials.end());
+
+            for (const auto &coefficient : allCoefficients) {
+                if (coefficient == Coefficient::ZERO) {
+                    continue;
+                }
+
+                for (auto lowerPolynomial : lowerDegreePolynomials) {
+                    lowerPolynomial += Polynomial(maxDeg) * coefficient;
+                    polynomials.push_back(lowerPolynomial);
+                }
+            }
+
+            return polynomials;
+        }
+
+        Natural deg() const {
+            return coefficients.size() - 1;
+        }
+
+        const Coefficient& operator [] (const Natural &degree) const {
+            return coefficients[degree];
+        }
+
         Polynomial& operator += (const Polynomial &other) {
             const auto numOfConsideredCoefficients = other.coefficients.size();
             addZeroCoefficientsUpTo(numOfConsideredCoefficients);
 
             for (auto i = 0; i < numOfConsideredCoefficients; ++i) {
-                coefficients[i] += other.coefficients[i];
+                coefficients[i] += other[i];
             }
 
             normalize();
@@ -51,7 +105,7 @@ class Polynomial {
             addZeroCoefficientsUpTo(numOfConsideredCoefficients);
 
             for (auto i = 0; i < numOfConsideredCoefficients; ++i) {
-                coefficients[i] -= other.coefficients[i];
+                coefficients[i] -= other[i];
             }
 
             normalize();
@@ -67,7 +121,53 @@ class Polynomial {
             return *this;
         }
 
-        std::string prettyString() const {
+        // this may be passed as a 'remainder' or 'quotient'
+        void divide(const Polynomial &divisor, Polynomial &quotient, Polynomial &remainder) const {
+            assert(divisor != ZERO);
+
+            remainder = *this;
+
+            if (deg() < divisor.deg()) {
+                quotient = ZERO;
+                return;
+            }
+
+            Natural divisorDeg = divisor.deg();
+            Natural quotientPower = deg() - divisorDeg + 1;
+            quotient.coefficients.resize(quotientPower);
+
+            Coefficient divisorHighCoefficientInv = divisor.coefficients.back().inv();
+
+            do {
+                --quotientPower;
+
+                Coefficient quotientCoefficient = remainder[quotientPower + divisorDeg] * divisorHighCoefficientInv;
+                quotient[quotientPower] = quotientCoefficient;
+
+                for (auto i = 0; i <= divisorDeg; ++i) {
+                    remainder[quotientPower + i] -= divisor[i] * quotientCoefficient;
+                }
+
+            } while (quotientPower != 0);
+
+            remainder.normalize();
+        }
+
+        Polynomial& operator /= (const Polynomial &other) {
+            Polynomial remainder;
+            divide(other, *this, remainder);
+
+            return *this;
+        }
+
+        Polynomial& operator %= (const Polynomial &other) {
+            Polynomial quotient;
+            divide(other, quotient, *this);
+
+            return *this;
+        }
+
+        std::string formulaString() const {
             std::vector<std::string> terms;
             for (auto power = coefficients.size() - 1; power > 0; --power) {
                 auto c = coefficients[power];
@@ -103,12 +203,18 @@ class Polynomial {
                 result += terms[i];
             }
 
-
-            result += ", a_i from " + Coefficient::setPrettyString();
             return result;
         }
 
+        std::string prettyString() const {
+            return formulaString() + ", a_i is from " + Coefficient::setPrettyString();
+        }
+
     private:
+        Coefficient& operator [] (const Natural &degree) {
+            return coefficients[degree];
+        }
+
         void normalize() {
             while (coefficients.back() == Coefficient::ZERO && coefficients.size() > 1) {
                 coefficients.pop_back();
@@ -121,6 +227,12 @@ class Polynomial {
             }
         }
 };
+
+template <typename Coefficient>
+const Polynomial<Coefficient> Polynomial<Coefficient>::ZERO = Coefficient::ZERO;
+
+template <typename Coefficient>
+const Polynomial<Coefficient> Polynomial<Coefficient>::ONE  = Coefficient::ONE;
 
 template <typename Coefficient>
 Polynomial<Coefficient> operator + (Polynomial<Coefficient> element1, const Polynomial<Coefficient> &element2) {
@@ -160,6 +272,26 @@ Polynomial<Coefficient> operator * (Polynomial<Coefficient> element, const Scala
 template <typename Coefficient, typename Scalar>
 Polynomial<Coefficient> operator * (const Scalar &scalar, Polynomial<Coefficient> element) {
     return element *= scalar;
+}
+
+template <typename Coefficient>
+Polynomial<Coefficient> operator / (Polynomial<Coefficient> element1, const Polynomial<Coefficient> &element2) {
+    return element1 /= element2;
+}
+
+template <typename Coefficient>
+Polynomial<Coefficient> operator % (Polynomial<Coefficient> element1, const Polynomial<Coefficient> &element2) {
+    return element1 %= element2;
+}
+
+template <typename Coefficient>
+bool operator == (const Polynomial<Coefficient> &element1, const Polynomial<Coefficient> &element2) {
+    return element1.coefficients == element2.coefficients;
+}
+
+template <typename Coefficient>
+bool operator != (const Polynomial<Coefficient> &element1, const Polynomial<Coefficient> &element2) {
+    return element1.coefficients != element2.coefficients;
 }
 
 namespace Polynomials {
