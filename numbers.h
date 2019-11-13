@@ -12,10 +12,15 @@ typedef Whole32 Whole;
 
 bool isPrime(Natural number);
 
+template<typename Number>
+Number multiplicationNeutralElement() {
+    return Number(1);
+}
+
 template <typename Number>
 Number fastPower(Number value, Natural power) {
     if (power == 0) {
-        return Number(1);
+        return multiplicationNeutralElement<Number>();
     }
 
     if (power == 1) {

@@ -63,7 +63,7 @@ class FinitePrimeFieldElement {
 
         FinitePrimeFieldElement& operator += (const FinitePrimeFieldElement &other) {
             remainder += other.remainder;
-            if (remainder > P) {
+            if (remainder >= P) {
                 remainder -= P;
             }
 
@@ -155,3 +155,12 @@ template <Natural P>
 bool operator != (const FinitePrimeFieldElement<P> &element1, const FinitePrimeFieldElement<P> &element2) {
     return element1.remainder != element2.remainder;
 }
+
+/*
+https://www.fluentcpp.com/2017/08/15/function-templates-partial-specialization-cpp/
+
+template <Natural P>
+FinitePrimeFieldElement<P> multiplicationNeutralElement() {
+    return FinitePrimeFieldElement<P>(1);
+}
+*/

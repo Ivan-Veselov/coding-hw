@@ -121,6 +121,27 @@ class Polynomial {
             return *this;
         }
 
+        Polynomial& operator *= (const Polynomial &other) {
+            const auto numOfConsideredCoefficients = deg() + other.deg() + 1;
+            addZeroCoefficientsUpTo(numOfConsideredCoefficients);
+
+            for (int i = numOfConsideredCoefficients - 1; i >= 0; --i) {
+                // i is an index of resulting multiplication
+                for (int j = std::min(i, int(deg())); j >= 0 && i - j <= other.deg(); --j) {
+                    // j is an index of original polynomial
+
+                    if (j != i) {
+                        coefficients[i] += coefficients[j] * other[i - j];
+                    } else {
+                        coefficients[i] = coefficients[j] * other[i - j];
+                    }
+                }
+            }
+
+            normalize();
+            return *this;
+        }
+
         // this may be passed as a 'remainder' or 'quotient'
         void divide(const Polynomial &divisor, Polynomial &quotient, Polynomial &remainder) const {
             assert(divisor != ZERO);
@@ -275,6 +296,11 @@ Polynomial<Coefficient> operator * (const Scalar &scalar, Polynomial<Coefficient
 }
 
 template <typename Coefficient>
+Polynomial<Coefficient> operator * (Polynomial<Coefficient> element1, const Polynomial<Coefficient> &element2) {
+    return element1 *= element2;
+}
+
+template <typename Coefficient>
 Polynomial<Coefficient> operator / (Polynomial<Coefficient> element1, const Polynomial<Coefficient> &element2) {
     return element1 /= element2;
 }
@@ -300,3 +326,12 @@ namespace Polynomials {
         return Polynomial<Coefficient>(power);
     }
 }
+
+/*
+https://www.fluentcpp.com/2017/08/15/function-templates-partial-specialization-cpp/
+
+template <typename Coefficient>
+Polynomial<Coefficient> multiplicationNeutralElement() {
+    return Polynomial<Coefficient>(Coefficient::ONE);
+}
+*/
